@@ -25,9 +25,9 @@ type ScorePromoted struct {
 // Values is a type alias for a map which has a key and value of string
 type Values map[string]string
 
-// Each loops through each value in a predictable way.
+// Walk loops through each value in a predictable way.
 // Note: this can be inefficient
-func (v Values) Each(fn func(string, interface{})) {
+func (v Values) Walk(fn func(string, interface{})) {
 	keys := make([]string, 0, len(v))
 	for k := range v {
 		keys = append(keys, k)

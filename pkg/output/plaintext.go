@@ -51,11 +51,11 @@ func (o Plaintext) Output(docs []entry.Document) error {
 func writeMap(w io.Writer, params *entry.Map) {
 	writer := tabwriter.NewWriter(w, 0, 0, 1, ' ', 0)
 
-	params.Union().Values.Each(func(k string, v interface{}) {
+	params.Union().Values.Walk(func(k string, v interface{}) {
 		fmt.Fprintf(writer, "\t・\t%s\t%v\n", k, entry.ToStrings(v).Join())
 	})
 	for _, v := range params.Difference() {
-		v.Values.Each(func(k string, v interface{}) {
+		v.Values.Walk(func(k string, v interface{}) {
 			fmt.Fprintf(writer, "\t・\t%s\t%v (optional)\n", k, entry.ToStrings(v).Join())
 		})
 	}

@@ -95,12 +95,12 @@ func (o Markdown) Output(docs []entry.Document) error {
 }
 
 func writeParams(w io.Writer, params *entry.Map, options Options) {
-	params.Union().Values.Each(func(k string, v interface{}) {
+	params.Union().Values.Walk(func(k string, v interface{}) {
 		fmt.Fprintf(w, "            %s ('%s')\n", k, entry.ToStrings(v).Join())
 	})
 	if options.Optionals {
 		for _, v := range params.Difference() {
-			v.Values.Each(func(k string, v interface{}) {
+			v.Values.Walk(func(k string, v interface{}) {
 				fmt.Fprintf(w, "            %s (optional, '%s')\n", k, entry.ToStrings(v).Join())
 			})
 		}
@@ -109,12 +109,12 @@ func writeParams(w io.Writer, params *entry.Map, options Options) {
 }
 
 func writeHeaders(w io.Writer, params *entry.Map, options Options) {
-	params.Union().Values.Each(func(k string, v interface{}) {
+	params.Union().Values.Walk(func(k string, v interface{}) {
 		fmt.Fprintf(w, "            %s: %s\n", k, entry.ToStrings(v).Join())
 	})
 	if options.Optionals {
 		for _, v := range params.Difference() {
-			v.Values.Each(func(k string, v interface{}) {
+			v.Values.Walk(func(k string, v interface{}) {
 				fmt.Fprintf(w, "            %s: %s (optional)\n", k, entry.ToStrings(v).Join())
 			})
 		}
@@ -123,7 +123,7 @@ func writeHeaders(w io.Writer, params *entry.Map, options Options) {
 }
 
 func getContentType(params *entry.Map) (res string) {
-	params.Union().Values.Each(func(k string, v interface{}) {
+	params.Union().Values.Walk(func(k string, v interface{}) {
 		if strings.ToLower(k) == "content-type" {
 			res = entry.ToStrings(v).Join()
 		}
