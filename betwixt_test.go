@@ -47,10 +47,26 @@ func TestPlaintext(t *testing.T) {
 		})
 
 		if err := capture.Output(); err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 
-		fmt.Println(buffer.String())
+		body := `GET 200 - /hello
+- Parameters:
+ ・ possible 2 (optional)
+ ・ random   2 (optional)
+- Request Headers:
+ ・ Accept-Encoding gzip
+ ・ User-Agent      Go-http-client/1.1
+ ・ Header          Value (optional)
+- Response Headers:
+ ・ Content-Type application/json
+- Response Body:
+
+  {"hello":"world"}
+`
+		if expected, actual := body, buffer.String(); expected != actual {
+			t.Errorf("expected: \n%q\n, actual: \n%q\n", expected, actual)
+		}
 	})
 }
 
