@@ -9,21 +9,22 @@ import (
 	"sync"
 
 	"github.com/SimonRichardson/betwixt/pkg/entry"
-	"github.com/SimonRichardson/betwixt/pkg/output"
 )
 
 // Betwixt is a struct that holds all the entries and outputs to be processed
 type Betwixt struct {
 	mutex   sync.Mutex
 	entries []entry.Entry
-	outputs []output.Output
+	outputs []Output
+	handler http.Handler
 }
 
 // New creates a Betwixt for possible outputs
-func New(outputs []output.Output) *Betwixt {
+func New(handler http.Handler, outputs []Output) *Betwixt {
 	return &Betwixt{
 		mutex:   sync.Mutex{},
 		outputs: outputs,
+		handler: handler,
 	}
 }
 
@@ -63,6 +64,10 @@ func (b *Betwixt) HandlerFunc(fn func(http.ResponseWriter, *http.Request)) http.
 	}
 }
 
+func (b *Betwixt) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	b.handler.ServeHTTP(w, r)
+}
+
 // Output the results
 func (b *Betwixt) Output() error {
 	b.mutex.Lock()
@@ -80,6 +85,11 @@ func (b *Betwixt) Output() error {
 	}
 
 	return nil
+}
+
+// Output defines an interface for consuming a document.
+type Output interface {
+	Output([]entry.Document) error
 }
 
 func readBody(read io.ReadCloser) func() []byte {
