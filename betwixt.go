@@ -28,44 +28,38 @@ func New(handler http.Handler, outputs []Output) *Betwixt {
 	}
 }
 
-// HandlerFunc handles all the middleware for creating the documents
-func (b *Betwixt) HandlerFunc(fn func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		writer := httptest.NewRecorder()
-		fn(writer, r)
-		writer.Flush()
+// ServeHTTP handles all the middleware for creating the documents
+func (b *Betwixt) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	writer := httptest.NewRecorder()
+	b.handler.ServeHTTP(writer, r)
+	writer.Flush()
 
-		nativeHeaders := w.Header()
-		for k, v := range writer.Header() {
-			for _, v := range v {
-				nativeHeaders.Add(k, v)
-			}
-		}
-		w.WriteHeader(writer.Code)
-		w.Write(writer.Body.Bytes())
-
-		// Only handle successful status codes
-		if status := writer.Code; status >= 200 && status < 300 {
-			b.mutex.Lock()
-			defer b.mutex.Unlock()
-
-			b.entries = append(b.entries, entry.Entry{
-				URL:         r.URL,
-				Method:      r.Method,
-				Status:      writer.Code,
-				ReqHeaders:  r.Header,
-				ReqBody:     readBody(r.Body),
-				RespHeaders: writer.Header(),
-				RespBody: func() []byte {
-					return writer.Body.Bytes()
-				},
-			})
+	nativeHeaders := w.Header()
+	for k, v := range writer.Header() {
+		for _, v := range v {
+			nativeHeaders.Add(k, v)
 		}
 	}
-}
+	w.WriteHeader(writer.Code)
+	w.Write(writer.Body.Bytes())
 
-func (b *Betwixt) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	b.handler.ServeHTTP(w, r)
+	// Only handle successful status codes
+	if status := writer.Code; status >= 200 && status < 300 {
+		b.mutex.Lock()
+		defer b.mutex.Unlock()
+
+		b.entries = append(b.entries, entry.Entry{
+			URL:         r.URL,
+			Method:      r.Method,
+			Status:      writer.Code,
+			ReqHeaders:  r.Header,
+			ReqBody:     readBody(r.Body),
+			RespHeaders: writer.Header(),
+			RespBody: func() []byte {
+				return writer.Body.Bytes()
+			},
+		})
+	}
 }
 
 // Output the results
