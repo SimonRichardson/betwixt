@@ -99,7 +99,7 @@ func (p *Map) Union() ValuesScore {
 	for k, v := range p.values {
 		var (
 			score = v.Score
-			total = Score(float64(p.total - 1))
+			total = Score(float64(p.total))
 		)
 		if v.Promoted {
 			score = total

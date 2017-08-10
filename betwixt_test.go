@@ -107,8 +107,7 @@ func TestPlaintext(t *testing.T) {
  ・ Content-Type application/json
 - Response Body:
 
-  {"hello":%q}
-`, a)
+  {"hello":%q}`, a)
 
 			expected, actual := body, buffer.String()
 			return expected != actual
