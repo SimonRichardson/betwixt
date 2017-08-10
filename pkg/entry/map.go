@@ -81,7 +81,7 @@ func (p *Map) Add(params ValuesPromoted) {
 			continue
 		}
 		p.values[key] = &ScorePromoted{
-			Score:    0,
+			Score:    1,
 			Promoted: v.Promoted,
 		}
 	}
