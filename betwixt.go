@@ -3,7 +3,7 @@ package betwixt
 import (
 	"bytes"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -30,6 +30,15 @@ func New(handler http.Handler, outputs []Output) *Betwixt {
 
 // ServeHTTP handles all the middleware for creating the documents
 func (b *Betwixt) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
 	writer := httptest.NewRecorder()
 	b.handler.ServeHTTP(writer, r)
 	writer.Flush()
@@ -49,11 +58,13 @@ func (b *Betwixt) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer b.mutex.Unlock()
 
 		b.entries = append(b.entries, entry.Entry{
-			URL:         r.URL,
-			Method:      r.Method,
-			Status:      writer.Code,
-			ReqHeaders:  r.Header,
-			ReqBody:     readBody(r.Body),
+			URL:        r.URL,
+			Method:     r.Method,
+			Status:     writer.Code,
+			ReqHeaders: r.Header,
+			ReqBody: func() []byte {
+				return bodyBytes
+			},
 			RespHeaders: writer.Header(),
 			RespBody: func() []byte {
 				return writer.Body.Bytes()
@@ -84,19 +95,6 @@ func (b *Betwixt) Output() error {
 // Output defines an interface for consuming a document.
 type Output interface {
 	Output([]entry.Document) error
-}
-
-func readBody(read io.ReadCloser) func() []byte {
-	defer read.Close()
-
-	var buffer bytes.Buffer
-	if _, err := buffer.ReadFrom(read); err != nil {
-		return func() []byte {
-			return make([]byte, 0, 0)
-		}
-	}
-
-	return buffer.Bytes
 }
 
 func group(entries []entry.Entry) ([]entry.Document, error) {
