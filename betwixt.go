@@ -87,21 +87,23 @@ type Output interface {
 }
 
 func readBody(read io.ReadCloser) func() []byte {
-	return func() []byte {
-		var buffer bytes.Buffer
-		if _, err := buffer.ReadFrom(read); err != nil {
+	defer read.Close()
+
+	var buffer bytes.Buffer
+	if _, err := buffer.ReadFrom(read); err != nil {
+		return func() []byte {
 			return make([]byte, 0, 0)
 		}
-
-		return buffer.Bytes()
 	}
+
+	return buffer.Bytes
 }
 
 func group(entries []entry.Entry) ([]entry.Document, error) {
 	// Group according to the url and status code.
 	groups := entry.Entries(entries).GroupBy(func(entry entry.Entry) string {
 		url := fmt.Sprintf("%s/%s", entry.URL.Host, entry.NormalisePath())
-		return fmt.Sprintf("%s-%s-%s", entry.Method, url, entry.Status)
+		return fmt.Sprintf("%s-%s-%d", entry.Method, url, entry.Status)
 	})
 
 	// Loop through all the groups and find differences.
